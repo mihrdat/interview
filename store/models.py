@@ -18,9 +18,12 @@ class Credit(models.Model):
 
 
 class CreditTransactionLog(models.Model):
+    TYPE_DEPOSIT = "DEPOSIT"
+    TYPE_WITHDRAWAL = "WITHDRAWAL"
+
     TYPE_CHOICES = [
-        ("DEPOSIT", "Deposit"),
-        ("WITHDRAWAL", "Withdrawal"),
+        (TYPE_DEPOSIT, "Deposit"),
+        (TYPE_WITHDRAWAL, "Withdrawal"),
     ]
 
     credit = models.ForeignKey(Credit, on_delete=models.CASCADE)
@@ -29,7 +32,7 @@ class CreditTransactionLog(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 
-class CreditDepositRequest(models.Model):
+class DepositRequest(models.Model):
     STATUS_PENDING = "PENDING"
     STATUS_APPROVED = "APPROVED"
     STATUS_REJECTED = "REJECTED"
