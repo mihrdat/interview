@@ -19,10 +19,12 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "rest_framework.authtoken",
     "corsheaders",
     "minio_storage",
     "django_filters",
     "drf_spectacular",
+    "users",
 ]
 
 MIDDLEWARE = [
@@ -94,6 +96,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 REST_FRAMEWORK = {
     "COERCE_DECIMAL_TO_STRING": False,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework.authentication.TokenAuthentication",
+    ),
 }
 
 REDIS_URL = os.environ.get("REDIS_URL")
@@ -118,3 +123,5 @@ SPECTACULAR_SETTINGS = {
 }
 
 BASE_BACKEND_URL = os.environ.get("BASE_BACKEND_URL")
+
+AUTH_USER_MODEL = "users.User"
