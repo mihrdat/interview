@@ -4,8 +4,10 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
     path("swagger/", include("config.urls.swagger")),
+    path("admin/", admin.site.urls),
+    path("auth/", include("users.urls")),
+    path("auth/", include("users.urls.token")),
 ]
 
 if settings.DEBUG:
