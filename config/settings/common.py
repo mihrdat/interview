@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     "minio_storage",
     "django_filters",
     "drf_spectacular",
+    "users",
 ]
 
 MIDDLEWARE = [
