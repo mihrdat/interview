@@ -7,6 +7,7 @@ urlpatterns = [
     path("swagger/", include("config.urls.swagger")),
     path("admin/", admin.site.urls),
     path("auth/", include("users.urls")),
+    path("auth/", include("users.urls.token")),
 ]
 
 if settings.DEBUG:
