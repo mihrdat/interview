@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from .models import Seller, Credit, DepositRequest, CreditTransactionLog
+from .models import Seller, Credit, DepositRequest, CreditTransactionLog, Sale
 
 User = get_user_model()
 
@@ -61,14 +61,21 @@ class DepositRequestCreateSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
-class SaleChargeSerializer(serializers.Serializer):
-    AMOUNT_CHOICES = [100, 200, 500, 1000]
-
+class SaleSerializer(serializers.ModelSerializer):
+    AMOUNT_CHOICES = [1000, 2000, 5000, 10_000]
     amount = serializers.ChoiceField(choices=AMOUNT_CHOICES)
-    phone_number = serializers.CharField(max_length=15)
+
+    class Meta:
+        model = Sale
+        fields = ["id", "seller", "amount", "phone_number", "created_at"]
+        read_only_fields = ["seller"]
 
     def validate_amount(self, value):
         balance = self.context["balance"]
         if value > balance:
             raise serializers.ValidationError("Insufficient balance.")
         return value
+
+    def create(self, validated_data):
+        validated_data["seller"] = self.context["request"].user.seller
+        return super().create(validated_data)

@@ -4,6 +4,7 @@ from .views import (
     CreditViewSet,
     DepositRequestViewSet,
     CreditTransactionLogViewSet,
+    SaleViewSet,
 )
 
 router = routers.DefaultRouter()
@@ -16,4 +17,7 @@ credit_router.register(
     "transaction_logs", CreditTransactionLogViewSet, basename="credit-transaction-logs"
 )
 
-urlpatterns = router.urls + credit_router.urls
+seller_router = routers.NestedSimpleRouter(router, "sellers", lookup="seller")
+seller_router.register("sales", SaleViewSet, basename="seller-sales")
+
+urlpatterns = router.urls + credit_router.urls + seller_router.urls
