@@ -102,3 +102,12 @@ class DepositRequestViewSet(CreateModelMixin, GenericViewSet):
         if self.action == "create":
             self.serializer_class = DepositRequestCreateSerializer
         return super().get_serializer_class()
+
+
+class SaleViewSet(GenericViewSet):
+    queryset = CreditTransactionLog.objects.all()
+    serializer_class = CreditTransactionLogSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return super().get_queryset().filter(credit__seller=self.request.user.seller)
