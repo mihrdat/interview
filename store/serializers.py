@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from .models import Seller, Credit, DepositRequest
+from .models import Seller, Credit, DepositRequest, CreditTransactionLog
 
 User = get_user_model()
 
@@ -16,10 +16,33 @@ class SellerSerializer(serializers.ModelSerializer):
         return seller.credit.balance
 
 
+class CreditTransactionLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CreditTransactionLog
+        fields = ["id", "amount", "type", "created_at"]
+
+
 class CreditSerializer(serializers.ModelSerializer):
+    total_sales = serializers.SerializerMethodField(read_only=True)
+    total_deposits = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = Credit
-        fields = ["id", "seller", "balance"]
+        fields = ["id", "seller", "balance", "total_deposits", "total_sales"]
+
+    def get_total_sales(self, credit):
+        return sum(
+            log.amount
+            for log in credit.transaction_logs.all()
+            if log.type == CreditTransactionLog.TYPE_SALE
+        )
+
+    def get_total_deposits(self, credit):
+        return sum(
+            log.amount
+            for log in credit.transaction_logs.all()
+            if log.type == CreditTransactionLog.TYPE_DEPOSIT
+        )
 
 
 class DepositRequestSerializer(serializers.ModelSerializer):

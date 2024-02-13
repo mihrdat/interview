@@ -19,6 +19,7 @@ from .serializers import (
     DepositRequestSerializer,
     DepositRequestCreateSerializer,
     SaleChargeSerializer,
+    CreditTransactionLogSerializer,
 )
 from .pagination import DefaultLimitOffsetPagination
 
@@ -39,7 +40,7 @@ class SellerViewSet(
 
 
 class CreditViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
-    queryset = Credit.objects.select_related("seller__user").all()
+    queryset = Credit.objects.prefetch_related("transaction_logs").all()
     serializer_class = CreditSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = DefaultLimitOffsetPagination
@@ -80,6 +81,16 @@ class CreditViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
         if self.action == "sale_charge":
             self.serializer_class = SaleChargeSerializer
         return super().get_serializer_class()
+
+
+class CreditTransactionLogViewSet(ListModelMixin, GenericViewSet):
+    queryset = CreditTransactionLog.objects.all()
+    serializer_class = CreditTransactionLogSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = DefaultLimitOffsetPagination
+
+    def get_queryset(self):
+        return super().get_queryset().filter(credit=self.kwargs["credit_pk"])
 
 
 class DepositRequestViewSet(CreateModelMixin, GenericViewSet):
