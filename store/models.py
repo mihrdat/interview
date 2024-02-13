@@ -19,11 +19,11 @@ class Credit(models.Model):
 
 class CreditTransactionLog(models.Model):
     TYPE_DEPOSIT = "DEPOSIT"
-    TYPE_WITHDRAWAL = "WITHDRAWAL"
+    TYPE_SALE = "SALE"
 
     TYPE_CHOICES = [
         (TYPE_DEPOSIT, "Deposit"),
-        (TYPE_WITHDRAWAL, "Withdrawal"),
+        (TYPE_SALE, "Sale"),
     ]
 
     credit = models.ForeignKey(Credit, on_delete=models.CASCADE)

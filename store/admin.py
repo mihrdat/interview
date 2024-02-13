@@ -14,21 +14,19 @@ class DepositRequestAdmin(admin.ModelAdmin):
         return self.readonly_fields
 
     @transaction.atomic
-    def approve_selected(self, request, queryset):
-        for deposit_request in queryset:
-            if deposit_request.status == DepositRequest.STATUS_PENDING:
-                deposit_request.status = DepositRequest.STATUS_APPROVED
-                deposit_request.save(update_fields=["status"])
+    def save_model(self, request, obj, form, change):
+        if obj.status == DepositRequest.STATUS_APPROVED:
+            credit = obj.credit
+            credit.balance += obj.amount
+            credit.save(update_fields=["balance"])
 
-                credit = deposit_request.credit
-                credit.balance += deposit_request.amount
-                credit.save(update_fields=["balance"])
+            CreditTransactionLog.objects.create(
+                credit=credit,
+                amount=obj.amount,
+                type=CreditTransactionLog.TYPE_DEPOSIT,
+            )
 
-                CreditTransactionLog.objects.create(
-                    credit=credit,
-                    amount=deposit_request.amount,
-                    type=CreditTransactionLog.TYPE_DEPOSIT,
-                )
+        super().save_model(request, obj, form, change)
 
 
 admin.site.register(DepositRequest, DepositRequestAdmin)
