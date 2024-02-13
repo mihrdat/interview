@@ -36,3 +36,16 @@ class DepositRequestCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data["credit"] = self.context["request"].user.seller.credit
         return super().create(validated_data)
+
+
+class SaleChargeSerializer(serializers.Serializer):
+    AMOUNT_CHOICES = [100, 200, 500, 1000]
+
+    amount = serializers.ChoiceField(choices=AMOUNT_CHOICES)
+    phone_number = serializers.CharField(max_length=15)
+
+    def validate_amount(self, value):
+        balance = self.context["balance"]
+        if value > balance:
+            raise serializers.ValidationError("Insufficient balance.")
+        return value
