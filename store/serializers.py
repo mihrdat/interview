@@ -33,25 +33,21 @@ class CreditSerializer(serializers.ModelSerializer):
     def get_total_sales(self, credit):
         return sum(
             log.amount
-            for log in credit.transaction_logs.all()
-            if log.type == CreditTransactionLog.TYPE_SALE
+            for log in credit.transaction_logs.filter(
+                type=CreditTransactionLog.TYPE_SALE
+            ).all()
         )
 
     def get_total_deposits(self, credit):
         return sum(
             log.amount
-            for log in credit.transaction_logs.all()
-            if log.type == CreditTransactionLog.TYPE_DEPOSIT
+            for log in credit.transaction_logs.filter(
+                type=CreditTransactionLog.TYPE_DEPOSIT
+            ).all()
         )
 
 
 class DepositRequestSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DepositRequest
-        fields = ["id", "credit", "amount", "status", "created_at", "updated_at"]
-
-
-class DepositRequestCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = DepositRequest
         fields = ["id", "amount"]

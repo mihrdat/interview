@@ -17,7 +17,6 @@ from .serializers import (
     SellerSerializer,
     CreditSerializer,
     DepositRequestSerializer,
-    DepositRequestCreateSerializer,
     CreditTransactionLogSerializer,
     SaleSerializer,
 )
@@ -66,11 +65,6 @@ class DepositRequestViewSet(CreateModelMixin, GenericViewSet):
     queryset = DepositRequest.objects.all()
     serializer_class = DepositRequestSerializer
     permission_classes = [IsAuthenticated]
-
-    def get_serializer_class(self):
-        if self.action == "create":
-            self.serializer_class = DepositRequestCreateSerializer
-        return super().get_serializer_class()
 
 
 class SaleViewSet(CreateModelMixin, ListModelMixin, RetrieveModelMixin, GenericViewSet):
