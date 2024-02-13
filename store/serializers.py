@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from .models import Seller, Credit, DepositRequest, CreditTransactionLog, Sale
+from .models import Seller, Credit, Deposit, CreditTransactionLog, Sale
 
 User = get_user_model()
 
@@ -47,10 +47,11 @@ class CreditSerializer(serializers.ModelSerializer):
         )
 
 
-class DepositRequestSerializer(serializers.ModelSerializer):
+class DepositSerializer(serializers.ModelSerializer):
     class Meta:
-        model = DepositRequest
-        fields = ["id", "amount"]
+        model = Deposit
+        fields = ["id", "amount", "created_at", "status"]
+        read_only_fields = ["credit", "created_at", "status"]
 
     def create(self, validated_data):
         validated_data["credit"] = self.context["request"].user.seller.credit

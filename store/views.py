@@ -9,14 +9,13 @@ from rest_framework.mixins import (
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
-from .models import Seller, Credit, DepositRequest, CreditTransactionLog, Sale
+from .models import Seller, Credit, Deposit, CreditTransactionLog, Sale
 from .serializers import (
     SellerSerializer,
     CreditSerializer,
-    DepositRequestSerializer,
+    DepositSerializer,
     CreditTransactionLogSerializer,
     SaleSerializer,
 )
@@ -36,35 +35,6 @@ class SellerViewSet(
         if not user.is_staff:
             self.queryset = self.queryset.filter(user=user)
         return super().get_queryset()
-
-
-class CreditViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
-    queryset = Credit.objects.prefetch_related("transaction_logs").all()
-    serializer_class = CreditSerializer
-    permission_classes = [IsAuthenticated]
-    pagination_class = DefaultLimitOffsetPagination
-
-    def get_queryset(self):
-        user = self.request.user
-        if not user.is_staff:
-            self.queryset = self.queryset.filter(seller=user.seller)
-        return super().get_queryset()
-
-
-class CreditTransactionLogViewSet(ListModelMixin, GenericViewSet):
-    queryset = CreditTransactionLog.objects.all()
-    serializer_class = CreditTransactionLogSerializer
-    permission_classes = [IsAuthenticated]
-    pagination_class = DefaultLimitOffsetPagination
-
-    def get_queryset(self):
-        return super().get_queryset().filter(credit=self.kwargs["credit_pk"])
-
-
-class DepositRequestViewSet(CreateModelMixin, GenericViewSet):
-    queryset = DepositRequest.objects.all()
-    serializer_class = DepositRequestSerializer
-    permission_classes = [IsAuthenticated]
 
 
 class SaleViewSet(CreateModelMixin, ListModelMixin, RetrieveModelMixin, GenericViewSet):
@@ -102,3 +72,38 @@ class SaleViewSet(CreateModelMixin, ListModelMixin, RetrieveModelMixin, GenericV
         context = super().get_serializer_context()
         context["balance"] = self.request.user.seller.credit.balance
         return context
+
+
+class DepositViewSet(
+    CreateModelMixin, ListModelMixin, RetrieveModelMixin, GenericViewSet
+):
+    queryset = Deposit.objects.all()
+    serializer_class = DepositSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = DefaultLimitOffsetPagination
+
+    def get_queryset(self):
+        return super().get_queryset().filter(credit__seller=self.kwargs["seller_pk"])
+
+
+class CreditViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
+    queryset = Credit.objects.prefetch_related("transaction_logs").all()
+    serializer_class = CreditSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = DefaultLimitOffsetPagination
+
+    def get_queryset(self):
+        user = self.request.user
+        if not user.is_staff:
+            self.queryset = self.queryset.filter(seller=user.seller)
+        return super().get_queryset()
+
+
+class CreditTransactionLogViewSet(ListModelMixin, GenericViewSet):
+    queryset = CreditTransactionLog.objects.all()
+    serializer_class = CreditTransactionLogSerializer
+    permission_classes = [IsAdminUser]
+    pagination_class = DefaultLimitOffsetPagination
+
+    def get_queryset(self):
+        return super().get_queryset().filter(credit=self.kwargs["credit_pk"])

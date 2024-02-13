@@ -17,6 +17,35 @@ class Credit(models.Model):
     seller = models.OneToOneField(Seller, on_delete=models.CASCADE)
 
 
+class Deposit(models.Model):
+    STATUS_PENDING = "PENDING"
+    STATUS_APPROVED = "APPROVED"
+    STATUS_REJECTED = "REJECTED"
+
+    STATUS_CHOICES = [
+        (STATUS_PENDING, "Pending"),
+        (STATUS_APPROVED, "Approved"),
+        (STATUS_REJECTED, "Rejected"),
+    ]
+
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    credit = models.ForeignKey(
+        Credit, on_delete=models.CASCADE, related_name="deposit_requests"
+    )
+    status = models.CharField(
+        max_length=10, choices=STATUS_CHOICES, default=STATUS_PENDING
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class Sale(models.Model):
+    seller = models.ForeignKey(Seller, on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    phone_number = models.CharField(max_length=15)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
 class CreditTransactionLog(models.Model):
     TYPE_DEPOSIT = "DEPOSIT"
     TYPE_SALE = "SALE"
@@ -31,33 +60,4 @@ class CreditTransactionLog(models.Model):
     )
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     type = models.CharField(max_length=10, choices=TYPE_CHOICES)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-
-class DepositRequest(models.Model):
-    STATUS_PENDING = "PENDING"
-    STATUS_APPROVED = "APPROVED"
-    STATUS_REJECTED = "REJECTED"
-
-    STATUS_CHOICES = [
-        (STATUS_PENDING, "Pending"),
-        (STATUS_APPROVED, "Approved"),
-        (STATUS_REJECTED, "Rejected"),
-    ]
-
-    credit = models.ForeignKey(
-        Credit, on_delete=models.CASCADE, related_name="deposit_requests"
-    )
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    status = models.CharField(
-        max_length=10, choices=STATUS_CHOICES, default=STATUS_PENDING
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-
-class Sale(models.Model):
-    seller = models.ForeignKey(Seller, on_delete=models.CASCADE)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    phone_number = models.CharField(max_length=15)
     created_at = models.DateTimeField(auto_now_add=True)
