@@ -26,7 +26,9 @@ class CreditTransactionLog(models.Model):
         (TYPE_SALE, "Sale"),
     ]
 
-    credit = models.ForeignKey(Credit, on_delete=models.CASCADE)
+    credit = models.ForeignKey(
+        Credit, on_delete=models.CASCADE, related_name="transaction_logs"
+    )
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     type = models.CharField(max_length=10, choices=TYPE_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -43,7 +45,9 @@ class DepositRequest(models.Model):
         (STATUS_REJECTED, "Rejected"),
     ]
 
-    credit = models.ForeignKey(Credit, on_delete=models.CASCADE)
+    credit = models.ForeignKey(
+        Credit, on_delete=models.CASCADE, related_name="deposit_requests"
+    )
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(
         max_length=10, choices=STATUS_CHOICES, default=STATUS_PENDING
