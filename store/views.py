@@ -48,7 +48,7 @@ class SaleViewSet(CreateModelMixin, ListModelMixin, RetrieveModelMixin, GenericV
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
-        credit = request.user.seller.credit
+        credit = Credit.objects.select_for_update().get(seller=request.user.seller)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
