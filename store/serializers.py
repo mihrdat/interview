@@ -63,9 +63,6 @@ class DepositSerializer(serializers.ModelSerializer):
 
 
 class SaleSerializer(serializers.ModelSerializer):
-    AMOUNT_CHOICES = [1_000, 2_000, 5_000, 10_000, 20_000, 50_000]
-    amount = serializers.ChoiceField(choices=AMOUNT_CHOICES)
-
     class Meta:
         model = Sale
         fields = ["id", "seller", "amount", "phone_number", "created_at"]
