@@ -29,6 +29,10 @@ class TestCase(BaseTestCase):
         url = reverse("seller-sales-list", kwargs={"seller_pk": seller_id})
         return self.client.post(url, payload, content_type="application/json")
 
+    def list_sale(self, seller_id):
+        url = reverse("seller-sales-list", kwargs={"seller_pk": seller_id})
+        return self.client.get(url)
+
     def get_sale(self, seller_id, sale_id):
         url = reverse(
             "seller-sales-detail", kwargs={"seller_pk": seller_id, "pk": sale_id}
@@ -119,6 +123,44 @@ class TestCreateSale(TestCase):
         self.assertGreater(credit.transaction_logs.count(), 0)
 
 
+class TestListSale(TestCase):
+    def setUp(self):
+        self.SALES_COUNT = 10
+        super().setUp()
+
+        self.sales = baker.make(
+            Sale, seller=self.user.seller, _quantity=self.SALES_COUNT
+        )
+
+    def test_if_user_is_anonymous_returns_401(self):
+        response = self.list_sale(self.user.seller.id)
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_if_user_is_admin_returns_200(self):
+        self.authenticate(is_staff=True)
+
+        response = self.list_sale(self.user.seller.id)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_if_user_is_not_owner_returns_403(self):
+        another_user = baker.make(User)
+        self.client.force_authenticate(another_user)
+
+        response = self.list_sale(self.user.seller.id)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_if_sales_exists_and_correct_count_returns_200(self):
+        self.authenticate()
+
+        response = self.list_sale(self.user.seller.id)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["results"]), self.SALES_COUNT)
+
+
 class TestRetrieveSale(TestCase):
     def setUp(self):
         super().setUp()
@@ -130,6 +172,23 @@ class TestRetrieveSale(TestCase):
         response = self.get_sale(self.user.seller.id, sale_id)
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_if_user_is_admin_returns_200(self):
+        sale_id = self.sale.id
+        self.authenticate(is_staff=True)
+
+        response = self.get_sale(self.user.seller.id, sale_id)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_if_user_is_not_owner_returns_403(self):
+        sale_id = self.sale.id
+        another_user = baker.make(User)
+        self.client.force_authenticate(another_user)
+
+        response = self.get_sale(self.user.seller.id, sale_id)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_if_sale_does_not_exists_returns_404(self):
         sale_id = 0
