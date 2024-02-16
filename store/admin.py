@@ -5,7 +5,6 @@ from .models import Deposit, CreditTransactionLog, Credit
 
 class DepositRequestAdmin(admin.ModelAdmin):
     list_display = ["credit", "amount", "status", "created_at", "updated_at"]
-    actions = ["approve_selected"]
     readonly_fields = ["credit", "amount", "created_at", "updated_at"]
 
     def get_readonly_fields(self, request, obj=None):

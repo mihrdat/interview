@@ -1,5 +1,8 @@
+from django.db import transaction
 from django.contrib.auth import get_user_model
+
 from rest_framework import serializers
+
 from .models import Seller, Credit, Deposit, CreditTransactionLog, Sale
 
 User = get_user_model()
@@ -60,7 +63,7 @@ class DepositSerializer(serializers.ModelSerializer):
 
 
 class SaleSerializer(serializers.ModelSerializer):
-    AMOUNT_CHOICES = [1000, 2000, 5000, 10_000]
+    AMOUNT_CHOICES = [1_000, 2_000, 5_000, 10_000, 20_000, 50_000]
     amount = serializers.ChoiceField(choices=AMOUNT_CHOICES)
 
     class Meta:
@@ -68,12 +71,29 @@ class SaleSerializer(serializers.ModelSerializer):
         fields = ["id", "seller", "amount", "phone_number", "created_at"]
         read_only_fields = ["seller"]
 
-    def validate_amount(self, value):
-        balance = self.context["balance"]
-        if value > balance:
-            raise serializers.ValidationError("Insufficient balance.")
-        return value
-
+    @transaction.atomic
     def create(self, validated_data):
-        validated_data["seller"] = self.context["request"].user.seller
+        seller = self.context["request"].user.seller
+        credit = Credit.objects.select_for_update().get(seller=seller)
+        amount = validated_data["amount"]
+
+        if amount > credit.balance:
+            raise serializers.ValidationError(
+                {
+                    "amount": [
+                        "Insufficient balance.",
+                    ]
+                }
+            )
+
+        credit.balance -= amount
+        credit.save(update_fields=["balance"])
+
+        CreditTransactionLog.objects.create(
+            credit=credit,
+            amount=amount,
+            type=CreditTransactionLog.TYPE_SALE,
+        )
+
+        validated_data["seller"] = seller
         return super().create(validated_data)
