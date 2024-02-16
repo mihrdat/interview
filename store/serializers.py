@@ -7,13 +7,33 @@ User = get_user_model()
 
 class SellerSerializer(serializers.ModelSerializer):
     balance = serializers.SerializerMethodField(read_only=True)
+    total_sales = serializers.SerializerMethodField(read_only=True)
+    total_deposits = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Seller
-        fields = ["id", "user", "first_name", "last_name", "balance"]
+        fields = [
+            "id",
+            "user",
+            "first_name",
+            "last_name",
+            "balance",
+            "total_sales",
+            "total_deposits",
+        ]
 
     def get_balance(self, seller):
         return seller.credit.balance
+
+    def get_total_sales(self, seller):
+        return sum(sale.amount for sale in seller.sales.all())
+
+    def get_total_deposits(self, seller):
+        return sum(
+            deposit.amount
+            for deposit in seller.credit.deposit_requests.all()
+            if deposit.status == "APPROVED"
+        )
 
 
 class CreditTransactionLogSerializer(serializers.ModelSerializer):
@@ -23,28 +43,9 @@ class CreditTransactionLogSerializer(serializers.ModelSerializer):
 
 
 class CreditSerializer(serializers.ModelSerializer):
-    total_sales = serializers.SerializerMethodField(read_only=True)
-    total_deposits = serializers.SerializerMethodField(read_only=True)
-
     class Meta:
         model = Credit
-        fields = ["id", "seller", "balance", "total_deposits", "total_sales"]
-
-    def get_total_sales(self, credit):
-        return sum(
-            log.amount
-            for log in credit.transaction_logs.filter(
-                type=CreditTransactionLog.TYPE_SALE
-            ).all()
-        )
-
-    def get_total_deposits(self, credit):
-        return sum(
-            log.amount
-            for log in credit.transaction_logs.filter(
-                type=CreditTransactionLog.TYPE_DEPOSIT
-            ).all()
-        )
+        fields = ["id", "seller", "balance"]
 
 
 class DepositSerializer(serializers.ModelSerializer):
