@@ -47,13 +47,21 @@ class TestCase(BaseTestCase):
 
 
 class TestCreateSale(TestCase):
-    def test_if_user_is_anonymous_returns_401(self):
-        payload = {
+    def setUp(self):
+        super().setUp()
+        self.payload = {
             "amount": 1000.00,
             "phone_number": "09123456789",
         }
 
-        response = self.post_sale(json.dumps(payload), self.user.seller.id)
+    def set_credit_balance(self, balance):
+        credit = self.user.seller.credit
+        credit.balance = balance
+        credit.save(update_fields=["balance"])
+        return credit
+
+    def test_if_user_is_anonymous_returns_401(self):
+        response = self.post_sale(json.dumps(self.payload), self.user.seller.id)
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -66,58 +74,36 @@ class TestCreateSale(TestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_if_balance_is_insufficient_returns_400(self):
-        payload = {
-            "amount": 1000.00,
-            "phone_number": "09123456789",
-        }
         self.authenticate()
 
-        response = self.post_sale(json.dumps(payload), self.user.seller.id)
+        response = self.post_sale(json.dumps(self.payload), self.user.seller.id)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_if_data_is_valid_returns_201(self):
-        credit = self.user.seller.credit
-        credit.balance = 2000.00
-        credit.save(update_fields=["balance"])
-        payload = {
-            "amount": 1000.00,
-            "phone_number": "09123456789",
-        }
+        self.set_credit_balance(2000.00)
         self.authenticate()
 
-        response = self.post_sale(json.dumps(payload), self.user.seller.id)
+        response = self.post_sale(json.dumps(self.payload), self.user.seller.id)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertGreater(response.data["id"], 0)
 
     def test_if_decreases_balance_returns_201(self):
-        credit = self.user.seller.credit
-        credit.balance = 2000.00
-        credit.save(update_fields=["balance"])
-        payload = {
-            "amount": 1000.00,
-            "phone_number": "09123456789",
-        }
+        credit = self.set_credit_balance(2000.00)
         self.authenticate()
 
-        response = self.post_sale(json.dumps(payload), self.user.seller.id)
+        response = self.post_sale(json.dumps(self.payload), self.user.seller.id)
         credit.refresh_from_db()
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(credit.balance, 1000.00)
 
     def test_if_transaction_log_is_created_returns_201(self):
-        credit = self.user.seller.credit
-        credit.balance = 2000.00
-        credit.save(update_fields=["balance"])
-        payload = {
-            "amount": 1000.00,
-            "phone_number": "09123456789",
-        }
+        credit = self.set_credit_balance(2000.00)
         self.authenticate()
 
-        response = self.post_sale(json.dumps(payload), self.user.seller.id)
+        response = self.post_sale(json.dumps(self.payload), self.user.seller.id)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertGreater(credit.transaction_logs.count(), 0)
