@@ -29,6 +29,12 @@ class TestCase(BaseTestCase):
         url = reverse("seller-sales-list", kwargs={"seller_pk": seller_id})
         return self.client.post(url, payload, content_type="application/json")
 
+    def get_sale(self, seller_id, sale_id):
+        url = reverse(
+            "seller-sales-detail", kwargs={"seller_pk": seller_id, "pk": sale_id}
+        )
+        return self.client.get(url)
+
 
 class TestCreateSale(TestCase):
     def test_if_user_is_anonymous_returns_401(self):
@@ -64,7 +70,6 @@ class TestCreateSale(TestCase):
         credit = self.user.seller.credit
         credit.balance = 2000.00
         credit.save(update_fields=["balance"])
-
         payload = {
             "amount": 1000.00,
             "phone_number": "09123456789",
@@ -72,7 +77,6 @@ class TestCreateSale(TestCase):
         self.authenticate()
 
         response = self.post_sale(json.dumps(payload), self.user.seller.id)
-        credit.refresh_from_db()
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertGreater(response.data["id"], 0)
@@ -81,7 +85,6 @@ class TestCreateSale(TestCase):
         credit = self.user.seller.credit
         credit.balance = 2000.00
         credit.save(update_fields=["balance"])
-
         payload = {
             "amount": 1000.00,
             "phone_number": "09123456789",
@@ -98,7 +101,6 @@ class TestCreateSale(TestCase):
         credit = self.user.seller.credit
         credit.balance = 2000.00
         credit.save(update_fields=["balance"])
-
         payload = {
             "amount": 1000.00,
             "phone_number": "09123456789",
@@ -109,3 +111,33 @@ class TestCreateSale(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertGreater(credit.transaction_logs.count(), 0)
+
+
+class TestRetrieveSale(TestCase):
+    def setUp(self):
+        super().setUp()
+        self.sale = baker.make(Sale, seller=self.user.seller)
+
+    def test_if_user_is_anonymous_returns_401(self):
+        sale_id = self.sale.id
+
+        response = self.get_sale(self.user.seller.id, sale_id)
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_if_sale_does_not_exists_returns_404(self):
+        sale_id = 0
+        self.authenticate()
+
+        response = self.get_sale(self.user.seller.id, sale_id)
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_if_sale_exists_returns_200(self):
+        sale_id = self.sale.id
+        self.authenticate()
+
+        response = self.get_sale(self.user.seller.id, sale_id)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["id"], sale_id)
