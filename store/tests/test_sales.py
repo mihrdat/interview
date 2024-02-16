@@ -35,6 +35,12 @@ class TestCase(BaseTestCase):
         )
         return self.client.get(url)
 
+    def delete_sale(self, seller_id, sale_id):
+        url = reverse(
+            "seller-sales-detail", kwargs={"seller_pk": seller_id, "pk": sale_id}
+        )
+        return self.client.delete(url)
+
 
 class TestCreateSale(TestCase):
     def test_if_user_is_anonymous_returns_401(self):
@@ -141,3 +147,24 @@ class TestRetrieveSale(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["id"], sale_id)
+
+
+class TestDeleteSale(TestCase):
+    def setUp(self):
+        super().setUp()
+        self.sale = baker.make(Sale, seller=self.user.seller)
+
+    def test_if_user_is_anonymous_returns_401(self):
+        sale_id = self.sale.id
+
+        response = self.delete_sale(self.user.seller.id, sale_id)
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_if_sale_deletion_not_allowed_returns_405(self):
+        sale_id = self.sale.id
+        self.authenticate()
+
+        response = self.delete_sale(self.user.seller.id, sale_id)
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
