@@ -25,7 +25,11 @@ from .pagination import DefaultLimitOffsetPagination
 class SellerViewSet(
     ListModelMixin, RetrieveModelMixin, UpdateModelMixin, GenericViewSet
 ):
-    queryset = Seller.objects.select_related("credit").all()
+    queryset = (
+        Seller.objects.select_related("credit")
+        .prefetch_related("sales", "credit__deposit_requests")
+        .all()
+    )
     serializer_class = SellerSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = DefaultLimitOffsetPagination
@@ -48,7 +52,7 @@ class SaleViewSet(CreateModelMixin, ListModelMixin, RetrieveModelMixin, GenericV
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
-        credit = request.user.seller.credit
+        credit = Credit.objects.select_for_update().get(seller=request.user.seller)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()

@@ -1,6 +1,6 @@
 from django.db import transaction
 from django.contrib import admin
-from .models import Deposit, CreditTransactionLog
+from .models import Deposit, CreditTransactionLog, Credit
 
 
 class DepositRequestAdmin(admin.ModelAdmin):
@@ -16,7 +16,7 @@ class DepositRequestAdmin(admin.ModelAdmin):
     @transaction.atomic
     def save_model(self, request, obj, form, change):
         if obj.status == Deposit.STATUS_APPROVED:
-            credit = obj.credit
+            credit = Credit.objects.select_for_update().get(id=obj.credit.id)
             credit.balance += obj.amount
             credit.save(update_fields=["balance"])
 
