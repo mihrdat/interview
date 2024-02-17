@@ -1,13 +1,9 @@
-from django.db import transaction
-
 from rest_framework.mixins import (
     ListModelMixin,
     RetrieveModelMixin,
     UpdateModelMixin,
     CreateModelMixin,
 )
-from rest_framework import status
-from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
@@ -20,6 +16,7 @@ from .serializers import (
     SaleSerializer,
 )
 from .pagination import DefaultLimitOffsetPagination
+from .permissions import IsOwnerOrAdmin
 
 
 class SellerViewSet(
@@ -44,33 +41,11 @@ class SellerViewSet(
 class SaleViewSet(CreateModelMixin, ListModelMixin, RetrieveModelMixin, GenericViewSet):
     queryset = Sale.objects.all()
     serializer_class = SaleSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwnerOrAdmin]
     pagination_class = DefaultLimitOffsetPagination
 
     def get_queryset(self):
         return super().get_queryset().filter(seller=self.kwargs["seller_pk"])
-
-    @transaction.atomic
-    def create(self, request, *args, **kwargs):
-        credit = Credit.objects.select_for_update().get(seller=request.user.seller)
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        # Charge the customer's phone number
-        # ...
-
-        amount = serializer.validated_data["amount"]
-        credit.balance -= amount
-        credit.save(update_fields=["balance"])
-
-        CreditTransactionLog.objects.create(
-            credit=credit,
-            amount=amount,
-            type=CreditTransactionLog.TYPE_SALE,
-        )
-
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
