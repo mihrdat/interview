@@ -16,6 +16,7 @@ from .serializers import (
     SaleSerializer,
 )
 from .pagination import DefaultLimitOffsetPagination
+from .permissions import IsOwnerOrAdmin
 
 
 class SellerViewSet(
@@ -40,7 +41,7 @@ class SellerViewSet(
 class SaleViewSet(CreateModelMixin, ListModelMixin, RetrieveModelMixin, GenericViewSet):
     queryset = Sale.objects.all()
     serializer_class = SaleSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwnerOrAdmin]
     pagination_class = DefaultLimitOffsetPagination
 
     def get_queryset(self):
